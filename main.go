@@ -27,7 +27,7 @@ func main() {
 	portEnv := os.Getenv("PORT")
 	port, err := strconv.Atoi(portEnv)
 	if err != nil {
-		log.Printf("Port %s cannot be converted to int", portEnv)
+		log.Printf("Environment variable 'PORT=%s' cannot be converted to int, defaulting to 8000", portEnv)
 		port = 8000
 	}
 
@@ -39,10 +39,12 @@ func main() {
 		log.Fatalf("Failed to open db %s: %s", connString, err)
 	}
 
+	handlers := generateHandlers(db)
+
 	app := app{
 		db:       db,
 		port:     port,
-		handlers: &handlers{},
+		handlers: handlers,
 	}
 	defer app.db.Close()
 
@@ -50,8 +52,5 @@ func main() {
 	mux.HandleFunc("GET /", app.handlers.handleHome)
 
 	log.Printf("Listening on port %d \n", app.port)
-	err = http.ListenAndServe(fmt.Sprintf(":%d", app.port), mux)
-	if err != nil {
-		log.Fatalf("Failed to start server: %s", err)
-	}
+	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", app.port), mux))
 }
