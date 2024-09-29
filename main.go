@@ -3,7 +3,7 @@ package main
 import (
 	"database/sql"
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"strconv"
@@ -19,15 +19,19 @@ type app struct {
 }
 
 func main() {
+	jsonHandler := slog.NewJSONHandler(os.Stdout, nil)
+	slog.SetDefault(slog.New(jsonHandler))
+
 	err := godotenv.Load()
 	if err != nil {
-		log.Fatal("Error loading environment variables")
+		slog.Error("Error loading environment variables")
+		os.Exit(1)
 	}
 
 	portEnv := os.Getenv("PORT")
 	port, err := strconv.Atoi(portEnv)
 	if err != nil {
-		log.Printf("Environment variable 'PORT=%s' cannot be converted to int, defaulting to 8000", portEnv)
+		slog.Warn("Environment variable 'PORT' cannot be converted to int, defaulting to port 8000", "portEnv", portEnv)
 		port = 8000
 	}
 
@@ -36,8 +40,10 @@ func main() {
 	connString := fmt.Sprintf("%s?authToken=%s", dbUrl, dbAuthToken)
 	db, err := sql.Open("libsql", connString)
 	if err != nil {
-		log.Fatalf("Failed to open db %s: %s", connString, err)
+		slog.Error("Failed to open db connection", "connectionString", connString, "error", err)
+		panic("Failed to open db connection")
 	}
+	defer db.Close()
 
 	handlers := generateHandlers(db)
 
@@ -46,11 +52,15 @@ func main() {
 		port:     port,
 		handlers: handlers,
 	}
-	defer app.db.Close()
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /", app.handlers.handleHome)
+	mux.HandleFunc("GET /", makeHandlerFunc(app.handlers.handleHome))
+	muxWithMiddleware := reqIdMiddleware(mux)
 
-	log.Printf("Listening on port %d \n", app.port)
-	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", app.port), mux))
+	slog.Info("Starting http server", "port", app.port)
+
+	if err = http.ListenAndServe(fmt.Sprintf(":%d", app.port), muxWithMiddleware); err != nil {
+		slog.Error("Failed to start http server", "error", err)
+		panic("Failed to start http server")
+	}
 }
