@@ -1,0 +1,17 @@
+info:
+  contact: {}
+paths:
+  /v1/health:
+    get:
+      description: Healthcheck endpoint
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "500":
+          description: Internal Server Error
+      summary: Returns the current health status of the application
+      tags:
+      - Healthchecker
+swagger: "2.0"
