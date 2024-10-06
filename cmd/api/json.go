@@ -7,6 +7,14 @@ import (
 
 const one_mb = 1_048_578
 
+type errEnvelope struct {
+	Error string `json:"error"`
+}
+
+type dataEnvelope struct {
+	Data any `json:"data"`
+}
+
 func writeJSON(w http.ResponseWriter, status int, data any) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
@@ -14,11 +22,7 @@ func writeJSON(w http.ResponseWriter, status int, data any) error {
 }
 
 func writeJSONError(w http.ResponseWriter, status int, message string) error {
-	type envelope struct {
-		Error string `json:"error"`
-	}
-
-	return writeJSON(w, status, &envelope{Error: message})
+	return writeJSON(w, status, &errEnvelope{Error: message})
 }
 
 func readJSON(w http.ResponseWriter, r *http.Request, data any) error {
@@ -29,4 +33,8 @@ func readJSON(w http.ResponseWriter, r *http.Request, data any) error {
 	decoder.DisallowUnknownFields()
 
 	return decoder.Decode(data)
+}
+
+func (app *application) jsonResponse(w http.ResponseWriter, status int, data any) error {
+	return writeJSON(w, status, &dataEnvelope{Data: data})
 }

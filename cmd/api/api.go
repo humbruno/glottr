@@ -22,6 +22,7 @@ type application struct {
 type config struct {
 	addr   string
 	apiUrl string
+	env    string
 	db     dbConfig
 }
 

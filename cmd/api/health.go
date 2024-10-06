@@ -12,8 +12,12 @@ import (
 // @Failure		500
 // @Router			/v1/health [get]
 func (app *application) healthCheckHandler(w http.ResponseWriter, r *http.Request) {
-	if err := writeJSON(w, http.StatusOK, nil); err != nil {
-		app.logInternalError(r, err)
-		w.WriteHeader(http.StatusInternalServerError)
+	data := map[string]string{
+		"status": "ok",
+		"env":    app.config.env,
+	}
+
+	if err := app.jsonResponse(w, http.StatusOK, data); err != nil {
+		app.internalError(w, r, err)
 	}
 }
