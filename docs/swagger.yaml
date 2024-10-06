@@ -13,5 +13,5 @@ paths:
           description: Internal Server Error
       summary: Returns the current health status of the application
       tags:
-      - Healthchecker
+      - Healthcheck
 swagger: "2.0"
