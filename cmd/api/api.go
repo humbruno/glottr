@@ -45,6 +45,8 @@ func (app *application) mount() http.Handler {
 
 		docsURL := fmt.Sprintf("%s/swagger/doc.json", app.config.addr)
 		r.Get("/swagger/*", httpSwagger.Handler(httpSwagger.URL(docsURL)))
+
+		r.Post("/register", app.registerUserHandler)
 	})
 
 	return r
