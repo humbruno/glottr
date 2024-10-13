@@ -2,17 +2,23 @@ package storage
 
 import (
 	"context"
-	"database/sql"
+
+	"github.com/Nerzal/gocloak/v13"
 )
 
+type UserInfo struct {
+	Name  string
+	Email string
+}
+
 type UserStorage struct {
-	db *sql.DB
+	idp *gocloak.GoCloak
 }
 
 type Users interface {
-	GetByID(ctx context.Context, id int) error
+	GetInfo(ctx context.Context, accessToken, realm string) (*UserInfo, error)
 }
 
-func (s *UserStorage) GetByID(ctx context.Context, id int) error {
-	return nil
+func (s *UserStorage) GetInfo(ctx context.Context, accessToken, realm string) (*UserInfo, error) {
+	return nil, nil
 }
