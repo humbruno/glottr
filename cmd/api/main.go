@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"log/slog"
 	"os"
@@ -10,11 +11,13 @@ import (
 	"github.com/humbruno/glottr/internal/env"
 	"github.com/humbruno/glottr/internal/storage"
 	"github.com/joho/godotenv"
+	_ "github.com/lib/pq"
 )
 
 const (
-	fallbackLocalDbUrl       = "postgres://admin:adminpassword@localhost/glottr?sslmode=disable"
-	fallbackLocalDbDriver    = "postgres"
+	fallbackLocalDbName      = "glottr"
+	fallbackLocalDbUser      = "admin"
+	fallbackLocalDbPassword  = "password"
 	fallbackListenAddr       = ":8000"
 	fallbackLocalhostUrl     = "localhost:8000"
 	fallbackEnv              = "DEVELOPMENT"
@@ -32,13 +35,17 @@ func main() {
 	jsonHandler := slog.NewJSONHandler(os.Stdout, nil)
 	slog.SetDefault(slog.New(jsonHandler))
 
+	dbName := env.GetString("POSTGRES_DB", fallbackLocalDbName)
+	dbUser := env.GetString("POSTGRES_USER", fallbackLocalDbUser)
+	dbPassword := env.GetString("POSTGRES_PASSWORD", fallbackLocalDbPassword)
+
 	cfg := config{
 		addr:   env.GetString("ADDR", fallbackListenAddr),
 		apiUrl: env.GetString("EXTERNAL_URL", fallbackLocalhostUrl),
 		env:    env.GetString("ENV", fallbackEnv),
 		db: dbConfig{
-			driver: env.GetString("DB_DRIVER", fallbackLocalDbDriver),
-			addr:   env.GetString("DB_ADDR", fallbackLocalDbUrl),
+			driver: "postgres",
+			addr:   fmt.Sprintf("postgres://%s:%s@localhost:5432/%s?sslmode=disable", dbUser, dbPassword, dbName),
 		},
 		idp: idpConfig{
 			baseUrl:       env.GetString("KC_BASE_URL", fallbackIdpBaseUrl),

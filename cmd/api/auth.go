@@ -2,8 +2,6 @@ package main
 
 import (
 	"net/http"
-
-	"github.com/humbruno/glottr/internal/auth"
 )
 
 type registerUserPayload struct {
@@ -19,13 +17,7 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	hash, err := auth.MakePasswordHash(payload.Password)
-	if err != nil {
-		app.internalError(w, r, err)
-		return
-	}
-
 	app.jsonResponse(w, http.StatusOK, map[string]string{
-		"hash": hash,
+		"hey": "alo",
 	})
 }
