@@ -22,7 +22,7 @@ const (
 	fallbackLocalhostUrl     = "localhost:8000"
 	fallbackEnv              = "DEVELOPMENT"
 	fallbackIdpBaseUrl       = "http://localhost:8080"
-	fallbackIdpAdminUsername = "admin"
+	fallbackIdpAdminUsername = "brunoadmin"
 	fallbackIdpAdminPassword = "admin"
 )
 
