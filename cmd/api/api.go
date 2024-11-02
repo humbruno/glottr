@@ -24,18 +24,11 @@ type config struct {
 	apiUrl string
 	env    string
 	db     dbConfig
-	idp    idpConfig
 }
 
 type dbConfig struct {
 	driver string
 	addr   string
-}
-
-type idpConfig struct {
-	baseUrl       string
-	adminUsername string
-	adminPassword string
 }
 
 func (app *application) mount() http.Handler {

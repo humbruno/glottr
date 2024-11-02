@@ -6,7 +6,6 @@ import (
 	"log/slog"
 	"os"
 
-	"github.com/humbruno/glottr/internal/auth"
 	"github.com/humbruno/glottr/internal/database"
 	"github.com/humbruno/glottr/internal/env"
 	"github.com/humbruno/glottr/internal/storage"
@@ -15,15 +14,12 @@ import (
 )
 
 const (
-	fallbackLocalDbName      = "glottr"
-	fallbackLocalDbUser      = "admin"
-	fallbackLocalDbPassword  = "password"
-	fallbackListenAddr       = ":8000"
-	fallbackLocalhostUrl     = "localhost:8000"
-	fallbackEnv              = "DEVELOPMENT"
-	fallbackIdpBaseUrl       = "http://localhost:8080"
-	fallbackIdpAdminUsername = "brunoadmin"
-	fallbackIdpAdminPassword = "admin"
+	fallbackLocalDbName     = "glottr"
+	fallbackLocalDbUser     = "admin"
+	fallbackLocalDbPassword = "password"
+	fallbackListenAddr      = ":8000"
+	fallbackLocalhostUrl    = "localhost:8000"
+	fallbackEnv             = "DEVELOPMENT"
 )
 
 func main() {
@@ -47,11 +43,6 @@ func main() {
 			driver: "postgres",
 			addr:   fmt.Sprintf("postgres://%s:%s@localhost:5432/%s?sslmode=disable", dbUser, dbPassword, dbName),
 		},
-		idp: idpConfig{
-			baseUrl:       env.GetString("KC_BASE_URL", fallbackIdpBaseUrl),
-			adminUsername: env.GetString("KC_BOOTSTRAP_ADMIN_USERNAME", fallbackIdpAdminUsername),
-			adminPassword: env.GetString("KC_BOOTSTRAP_ADMIN_PASSWORD", fallbackIdpAdminPassword),
-		},
 	}
 
 	db, err := database.New(cfg.db.driver, cfg.db.addr)
@@ -61,11 +52,9 @@ func main() {
 	defer db.Close()
 	slog.Info("Database connection established")
 
-	idp := auth.NewIdpClient(cfg.idp.baseUrl)
-
 	app := application{
 		config:  cfg,
-		storage: storage.NewStorage(db, idp),
+		storage: storage.NewStorage(db),
 	}
 
 	mux := app.mount()
