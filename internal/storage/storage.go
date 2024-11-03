@@ -11,7 +11,7 @@ import (
 
 const fallbackIdpBaseUrl = "http://localhost:8080"
 
-var QueryTimeoutDuration = time.Second * 5
+var queryTimeoutDuration = time.Second * 5
 
 type Storage struct {
 	Users

@@ -26,7 +26,7 @@ func Seed(storage storage.Storage, db *sql.DB) {
 	tx, _ := db.BeginTx(ctx, nil)
 
 	for _, user := range users {
-		if err := storage.Users.CreateUser(ctx, tx, user.Email, user.Username); err != nil {
+		if err := storage.Users.CreateUser(ctx, tx, storage.Users.User{}; err != nil {
 			_ = tx.Rollback()
 			slog.Error("Error creating user", "err", err)
 			return

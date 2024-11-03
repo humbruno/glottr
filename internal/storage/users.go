@@ -3,14 +3,22 @@ package storage
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"log/slog"
 
 	"github.com/Nerzal/gocloak/v13"
 	"github.com/humbruno/glottr/internal/env"
+	"github.com/humbruno/glottr/internal/queries"
 )
 
 const (
 	realm = "glottr"
+)
+
+var (
+	ErrUsersFailedIdpConnection      = errors.New("Failed to connect to IDP")
+	ErrUsersFailedCreateUserIdp      = errors.New("Failed to create user in IDP")
+	ErrUsersFailedInsertUserDatabase = errors.New("Failed to insert IDP user into database")
 )
 
 type User struct {
@@ -32,41 +40,36 @@ func (s *UserStorage) handleIdpAdminLogin(ctx context.Context) (*gocloak.JWT, er
 	return s.idp.LoginAdmin(ctx, usr, pswd, realm)
 }
 
-func (s *UserStorage) CreateUser(ctx context.Context, tx *sql.Tx, email, username string) error {
+func (s *UserStorage) CreateUser(ctx context.Context, tx *sql.Tx, usr User) error {
 	admin, err := s.handleIdpAdminLogin(ctx)
 	if err != nil {
-		slog.Error("Failed to connect to IDP as admin", "err", err)
-		return err
+		slog.Error(ErrUsersFailedIdpConnection.Error(), "err", err)
+		return ErrUsersFailedIdpConnection
 	}
 
 	newUser := gocloak.User{
-		Email:    gocloak.StringP(email),
-		Username: gocloak.StringP(username),
+		Email:    gocloak.StringP(usr.Email),
+		Username: gocloak.StringP(usr.Username),
 		Enabled:  gocloak.BoolP(true),
 	}
 
 	id, err := s.idp.CreateUser(ctx, admin.AccessToken, realm, newUser)
 	if err != nil {
-		slog.Error("Failed to create user in IDP", "err", err)
-		return err
+		slog.Error(ErrUsersFailedCreateUserIdp.Error(), "err", err)
+		return ErrUsersFailedCreateUserIdp
 	}
 
 	slog.Info("User created in IDP", "id", id)
 
-	query := `
-    INSERT INTO users (id, username, email) VALUES 
-    ($1, $2, $3)
-    RETURNING id
-  `
-	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
+	ctx, cancel := context.WithTimeout(ctx, queryTimeoutDuration)
 	defer cancel()
 
 	var createdID string
 
-	err = tx.QueryRowContext(ctx, query, id, username, email).Scan(&createdID)
+	err = tx.QueryRowContext(ctx, queries.InsertUser, id, usr.Username, usr.Email).Scan(&createdID)
 	if err != nil {
-		slog.Error("Failed to insert user into database", "err", err)
-		return err
+		slog.Error(ErrUsersFailedInsertUserDatabase.Error(), "err", err)
+		return ErrUsersFailedInsertUserDatabase
 	}
 
 	slog.Info("IDP user added to database", "id", createdID)
