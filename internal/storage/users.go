@@ -10,9 +10,7 @@ import (
 )
 
 const (
-	realm                    = "glottr"
-	fallbackIdpAdminUsername = "bruno"
-	fallbackIdpAdminPassword = "admin"
+	realm = "glottr"
 )
 
 type User struct {
@@ -29,15 +27,15 @@ type Users interface {
 }
 
 func (s *UserStorage) handleIdpAdminLogin(ctx context.Context) (*gocloak.JWT, error) {
-	usr := env.GetString("KC_CLI_ADMIN_USERNAME", fallbackIdpAdminUsername)
-	pswd := env.GetString("KC_CLI_ADMIN_PASSWORD", fallbackIdpAdminPassword)
+	usr := env.GetString("KC_CLI_ADMIN_USERNAME", "")
+	pswd := env.GetString("KC_CLI_ADMIN_PASSWORD", "")
 	return s.idp.LoginAdmin(ctx, usr, pswd, realm)
 }
 
 func (s *UserStorage) CreateUser(ctx context.Context, tx *sql.Tx, email, username string) error {
 	admin, err := s.handleIdpAdminLogin(ctx)
 	if err != nil {
-		slog.Error("Failed to connect as keycloak admin", "err", err)
+		slog.Error("Failed to connect to IDP as admin", "err", err)
 		return err
 	}
 
@@ -49,26 +47,29 @@ func (s *UserStorage) CreateUser(ctx context.Context, tx *sql.Tx, email, usernam
 
 	id, err := s.idp.CreateUser(ctx, admin.AccessToken, realm, newUser)
 	if err != nil {
-		slog.Error("Failed to create user in keycloak", "err", err)
+		slog.Error("Failed to create user in IDP", "err", err)
 		return err
 	}
 
-	slog.Info("created user!", "id", id)
+	slog.Info("User created in IDP", "id", id)
 
 	query := `
     INSERT INTO users (id, username, email) VALUES 
     ($1, $2, $3)
-    RETURNING id, created_at
+    RETURNING id
   `
 	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
 	defer cancel()
 
-	tx.QueryRowContext(
-		ctx,
-		query,
-		username,
-		email,
-	)
+	var createdID string
+
+	err = tx.QueryRowContext(ctx, query, id, username, email).Scan(&createdID)
+	if err != nil {
+		slog.Error("Failed to insert user into database", "err", err)
+		return err
+	}
+
+	slog.Info("IDP user added to database", "id", createdID)
 
 	return nil
 }

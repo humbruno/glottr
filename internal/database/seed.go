@@ -22,7 +22,7 @@ var usernames = []string{
 func Seed(storage storage.Storage, db *sql.DB) {
 	ctx := context.Background()
 
-	users := generateUsers(100)
+	users := generateUsers(1)
 	tx, _ := db.BeginTx(ctx, nil)
 
 	for _, user := range users {
