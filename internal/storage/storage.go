@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"context"
 	"database/sql"
 	"log/slog"
 	"time"
@@ -23,6 +24,20 @@ func NewStorage(db *sql.DB) Storage {
 	slog.Info("Idp connection established")
 
 	return Storage{
-		Users: &UserStorage{idp},
+		Users: &UserStorage{idp, db},
 	}
+}
+
+func withTx(db *sql.DB, ctx context.Context, fn func(*sql.Tx) error) error {
+	tx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+
+	if err := fn(tx); err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	return tx.Commit()
 }

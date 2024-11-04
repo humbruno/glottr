@@ -23,17 +23,13 @@ func Seed(storage storage.Storage, db *sql.DB) {
 	ctx := context.Background()
 
 	users := generateUsers(1)
-	tx, _ := db.BeginTx(ctx, nil)
 
 	for _, user := range users {
-		if err := storage.Users.CreateUser(ctx, tx, storage.Users.User{}; err != nil {
-			_ = tx.Rollback()
+		if err := storage.Users.Create(ctx, user); err != nil {
 			slog.Error("Error creating user", "err", err)
 			return
 		}
 	}
-
-	tx.Commit()
 }
 
 func generateUsers(num int) []*storage.User {
@@ -43,6 +39,7 @@ func generateUsers(num int) []*storage.User {
 		users[i] = &storage.User{
 			Username: usernames[i%len(usernames)] + fmt.Sprintf("%d", i),
 			Email:    usernames[i%len(usernames)] + fmt.Sprintf("%d", i) + "@example.com",
+			Password: "1234",
 		}
 	}
 

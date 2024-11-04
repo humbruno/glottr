@@ -4,6 +4,9 @@ DB_ADDR = postgres://admin:password@localhost:5432/glottr?sslmode=disable
 swagger:
 	@swag init -g ./cmd/api/main.go && swag fmt
 
+run:
+	@go run ./cmd/api
+
 docker:
 	@docker compose up -d
 
