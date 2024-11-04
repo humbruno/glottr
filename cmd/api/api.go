@@ -47,6 +47,7 @@ func (app *application) mount() http.Handler {
 		r.Get("/swagger/*", httpSwagger.Handler(httpSwagger.URL(docsURL)))
 
 		r.Post("/register", app.registerUserHandler)
+		r.Post("/login", app.loginUserHandler)
 	})
 
 	return r

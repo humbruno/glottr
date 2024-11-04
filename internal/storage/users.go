@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"log/slog"
+	"strings"
 
 	"github.com/Nerzal/gocloak/v13"
 	"github.com/humbruno/glottr/internal/env"
@@ -19,6 +20,7 @@ const (
 var (
 	ErrUsersFailedIdpConnection      = errors.New("Failed to connect to IDP")
 	ErrUsersFailedCreateUserIdp      = errors.New("Failed to create user in IDP")
+	ErrUsersUserExists               = errors.New("User already exists")
 	ErrUsersFailedSetIdpPassword     = errors.New("Failed to ser user password in IDP")
 	ErrUsersFailedInsertUserDatabase = errors.New("Failed to insert IDP user into database")
 )
@@ -65,6 +67,12 @@ func (s *UserStorage) createIdpUser(ctx context.Context, usr *User) (userId stri
 
 	newUserId, err := s.idp.CreateUser(ctx, admin.AccessToken, realm, newUser)
 	if err != nil {
+
+		if strings.Contains(err.Error(), "409") {
+			slog.Error(ErrUsersUserExists.Error(), "err", err)
+			return "", ErrUsersUserExists
+		}
+
 		slog.Error(ErrUsersFailedCreateUserIdp.Error(), "err", err)
 		return "", ErrUsersFailedCreateUserIdp
 	}

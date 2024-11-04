@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"log/slog"
 
 	"github.com/humbruno/glottr/internal/storage"
 )
@@ -25,10 +24,7 @@ func Seed(storage storage.Storage, db *sql.DB) {
 	users := generateUsers(1)
 
 	for _, user := range users {
-		if err := storage.Users.Create(ctx, user); err != nil {
-			slog.Error("Error creating user", "err", err)
-			return
-		}
+		storage.Users.Create(ctx, user)
 	}
 }
 
